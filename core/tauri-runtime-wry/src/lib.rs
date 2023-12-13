@@ -64,6 +64,9 @@ use tauri_utils::{
 };
 use wry::{FileDropEvent as WryFileDropEvent, Url, WebContext, WebView, WebViewBuilder};
 
+#[cfg(servo)]
+use wry::{WebViewBuilderExtServo, WebViewExtServo};
+
 pub use tao;
 pub use tao::window::{Window, WindowBuilder as TaoWindowBuilder, WindowId};
 pub use wry;
@@ -2013,6 +2016,7 @@ impl<T: UserEvent> Runtime<T> for Wry<T> {
 
     let proxy = self.event_loop.create_proxy();
 
+    // FIXME:
     self
       .event_loop
       .run_return(|event, event_loop, control_flow| {
@@ -2137,18 +2141,17 @@ fn handle_user_message<T: UserEvent>(
         match window_message {
           WindowMessage::WithWebview(f) => {
             if let WindowHandle::Webview { inner: w, .. } = &window {
-              #[cfg(any(
-                target_os = "linux",
-                target_os = "dragonfly",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-              ))]
+              #[cfg(servo)]
+              {
+                // f(w.);
+              }
+
+              #[cfg(all(not(servo), linux))]
               {
                 use wry::WebViewExtUnix;
                 f(w.webview());
               }
-              #[cfg(target_os = "macos")]
+              #[cfg(all(not(servo), macos))]
               {
                 use wry::WebViewExtMacOS;
                 f(Webview {
@@ -2157,7 +2160,7 @@ fn handle_user_message<T: UserEvent>(
                   ns_window: w.ns_window(),
                 });
               }
-              #[cfg(target_os = "ios")]
+              #[cfg(ios)]
               {
                 use tao::platform::ios::WindowExtIOS;
                 use wry::WebViewExtIOS;
@@ -2174,7 +2177,7 @@ fn handle_user_message<T: UserEvent>(
                   controller: w.controller(),
                 });
               }
-              #[cfg(target_os = "android")]
+              #[cfg(android)]
               {
                 f(w.handle())
               }
@@ -2645,8 +2648,6 @@ fn create_webview<T: UserEvent, F: Fn(RawWindow) + Send + 'static>(
     label,
     ipc_handler,
     url,
-    #[cfg(target_os = "android")]
-    on_webview_created,
     ..
   } = pending;
 
@@ -2709,19 +2710,27 @@ fn create_webview<T: UserEvent, F: Fn(RawWindow) + Send + 'static>(
     handler(raw);
   }
 
-  #[cfg(any(
-    target_os = "windows",
-    target_os = "macos",
-    target_os = "ios",
-    target_os = "android"
+  #[cfg(servo)]
+  let builder = WebViewBuilder::new_servo(window, context.proxy.clone());
+  #[cfg(all(
+    not(servo),
+    any(
+      target_os = "windows",
+      target_os = "macos",
+      target_os = "ios",
+      target_os = "android"
+    )
   ))]
-  let builder = WebViewBuilder::new(&window);
-  #[cfg(not(any(
-    target_os = "windows",
-    target_os = "macos",
-    target_os = "ios",
-    target_os = "android"
-  )))]
+  let builder = WebViewBuilder::new(window);
+  #[cfg(all(
+    not(servo),
+    not(any(
+      target_os = "windows",
+      target_os = "macos",
+      target_os = "ios",
+      target_os = "android"
+    ))
+  ))]
   let builder = {
     use wry::WebViewBuilderExtUnix;
     let vbox = window.default_vbox().unwrap();
