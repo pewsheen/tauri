@@ -2016,7 +2016,7 @@ impl<T: UserEvent> Runtime<T> for Wry<T> {
 
     let proxy = self.event_loop.create_proxy();
 
-    // FIXME:
+    // FIXME: handle event loop
     self
       .event_loop
       .run_return(|event, event_loop, control_flow| {
@@ -2711,7 +2711,8 @@ fn create_webview<T: UserEvent, F: Fn(RawWindow) + Send + 'static>(
   }
 
   #[cfg(servo)]
-  let builder = WebViewBuilder::new_servo(window, context.proxy.clone());
+  let arc_window = Arc::new(window);
+  let builder = WebViewBuilder::new_servo(arc_window.clone(), context.proxy.clone());
   #[cfg(all(
     not(servo),
     any(
@@ -2909,7 +2910,7 @@ fn create_webview<T: UserEvent, F: Fn(RawWindow) + Send + 'static>(
   Ok(WindowWrapper {
     label,
     inner: Some(WindowHandle::Webview {
-      window: Arc::new(window),
+      window: arc_window.clone(),
       inner: Rc::new(webview),
       context_store: web_context_store.clone(),
       context_key: if automation_enabled {
