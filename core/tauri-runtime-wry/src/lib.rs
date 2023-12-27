@@ -2016,7 +2016,6 @@ impl<T: UserEvent> Runtime<T> for Wry<T> {
 
     let proxy = self.event_loop.create_proxy();
 
-    // FIXME: handle event loop
     self
       .event_loop
       .run_return(|event, event_loop, control_flow| {
@@ -2142,9 +2141,7 @@ fn handle_user_message<T: UserEvent>(
           WindowMessage::WithWebview(f) => {
             if let WindowHandle::Webview { inner: w, .. } = &window {
               #[cfg(servo)]
-              {
-                // f(w.);
-              }
+              {}
 
               #[cfg(all(not(servo), linux))]
               {
@@ -2485,33 +2482,63 @@ fn handle_event_loop<T: UserEvent>(
       }
     }
 
-    Event::WindowEvent {
-      event, window_id, ..
-    } => {
+    #[cfg(servo)]
+    Event::RedrawRequested(window_id) => {
       if let Some(window_id) = webview_id_map.get(&window_id) {
         {
-          let windows_ref = windows.borrow();
-          if let Some(window) = windows_ref.get(&window_id) {
-            if let Some(event) = WindowEventWrapper::parse(&window.inner, &event).0 {
-              let label = window.label.clone();
-              let window_event_listeners = window.window_event_listeners.clone();
+          let mut windows_ref = windows.borrow_mut();
+          if let Some(window) = windows_ref.get_mut(&window_id) {
+            if let WindowHandle::Webview { inner, .. } = window.inner.as_mut().unwrap() {
+              let webview = Rc::get_mut(inner).unwrap();
+              webview.servo().handle_tao_redraw_event();
+            }
+          }
+        }
+      }
+    }
 
-              drop(windows_ref);
-
-              callback(RunEvent::WindowEvent {
-                label,
-                event: event.clone(),
-              });
-              let listeners = window_event_listeners.lock().unwrap();
-              let handlers = listeners.values();
-              for handler in handlers {
-                handler(&event);
+    Event::WindowEvent {
+      event: ref window_event,
+      window_id,
+      ..
+    } => {
+      if let Some(window_id) = webview_id_map.get(&window_id) {
+        let mut windows_ref = windows.borrow_mut();
+        if let Some(window) = windows_ref.get_mut(&window_id) {
+          #[cfg(servo)]
+          if let WindowHandle::Webview { inner, .. } = window.inner.as_mut().unwrap() {
+            let webview = Rc::get_mut(inner).unwrap();
+            if webview.servo().is_shutdown() {
+              if let Some(servo) = webview.servo().servo_client().take() {
+                servo.deinit();
               }
+              *control_flow = ControlFlow::Exit;
+            } else {
+              *control_flow = webview.servo().get_control_flow(&event);
+              webview.servo().handle_tao_window_event(window_event);
+              webview.servo().handle_servo_messages();
+            }
+          }
+
+          if let Some(event) = WindowEventWrapper::parse(&window.inner, &window_event).0 {
+            let label = window.label.clone();
+            let window_event_listeners = window.window_event_listeners.clone();
+
+            drop(windows_ref);
+
+            callback(RunEvent::WindowEvent {
+              label,
+              event: event.clone(),
+            });
+            let listeners = window_event_listeners.lock().unwrap();
+            let handlers = listeners.values();
+            for handler in handlers {
+              handler(&event);
             }
           }
         }
 
-        match event {
+        match window_event {
           #[cfg(windows)]
           TaoWindowEvent::ThemeChanged(theme) => {
             if let Some(window) = windows.borrow().get(&window_id) {
