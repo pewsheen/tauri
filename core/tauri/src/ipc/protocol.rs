@@ -11,7 +11,7 @@ use crate::{
 };
 use http::{
   header::{ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE},
-  HeaderValue, Method, StatusCode,
+  HeaderValue, Method, Request, StatusCode,
 };
 
 use super::{CallbackFn, InvokeBody, InvokeResponse};
@@ -161,7 +161,7 @@ pub fn get<R: Runtime>(manager: Arc<AppManager<R>>, label: String) -> UriSchemeP
   })
 }
 
-fn handle_ipc_message<R: Runtime>(message: String, manager: &AppManager<R>, label: &str) {
+fn handle_ipc_message<R: Runtime>(message: Request<String>, manager: &AppManager<R>, label: &str) {
   if let Some(webview) = manager.get_webview(label) {
     #[cfg(feature = "tracing")]
     let _span =
@@ -227,7 +227,7 @@ fn handle_ipc_message<R: Runtime>(message: String, manager: &AppManager<R>, labe
         let _span = tracing::trace_span!("ipc::request::decrypt_isolation_payload").entered();
 
         invoke_message.replace(
-          serde_json::from_str::<IsolationMessage<'_>>(&message)
+          serde_json::from_str::<IsolationMessage<'_>>(message.body())
             .map_err(Into::into)
             .and_then(|message| {
               Ok(Message {
@@ -245,7 +245,7 @@ fn handle_ipc_message<R: Runtime>(message: String, manager: &AppManager<R>, labe
     let message = invoke_message.unwrap_or_else(|| {
       #[cfg(feature = "tracing")]
       let _span = tracing::trace_span!("ipc::request::deserialize").entered();
-      serde_json::from_str::<Message>(&message).map_err(Into::into)
+      serde_json::from_str::<Message>(message.body()).map_err(Into::into)
     });
 
     match message {

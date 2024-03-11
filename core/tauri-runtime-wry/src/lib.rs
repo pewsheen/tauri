@@ -11,6 +11,7 @@
   html_favicon_url = "https://github.com/tauri-apps/tauri/raw/dev/app-icon.png"
 )]
 
+use http::Request;
 use raw_window_handle::{DisplayHandle, HasDisplayHandle, HasWindowHandle};
 
 use tauri_runtime::{
@@ -112,7 +113,7 @@ use std::{
 };
 
 pub type WebviewId = u32;
-type IpcHandler = dyn Fn(String) + 'static;
+type IpcHandler = dyn Fn(Request<String>) + 'static;
 
 #[cfg(any(
   windows,
@@ -2818,7 +2819,7 @@ fn handle_user_message<T: UserEvent>(
               log::error!("{}", e);
             }
           }
-          WebviewMessage::Navigate(url) => webview.load_url(url.as_str()),
+          WebviewMessage::Navigate(url) => webview.load_url(url.as_str()).unwrap(),
           WebviewMessage::Print => {
             let _ = webview.print();
           }
@@ -2831,7 +2832,7 @@ fn handle_user_message<T: UserEvent>(
             });
           }
           WebviewMessage::SetSize(size) => {
-            let mut bounds = webview.bounds();
+            let mut bounds = webview.bounds().unwrap();
             let size = size.to_logical(window.scale_factor());
             bounds.width = size.width;
             bounds.height = size.height;
@@ -2845,7 +2846,7 @@ fn handle_user_message<T: UserEvent>(
             webview.set_bounds(bounds);
           }
           WebviewMessage::SetPosition(position) => {
-            let mut bounds = webview.bounds();
+            let mut bounds = webview.bounds().unwrap();
             let position = position.to_logical(window.scale_factor());
             bounds.x = position.x;
             bounds.y = position.y;
@@ -2860,16 +2861,16 @@ fn handle_user_message<T: UserEvent>(
           }
           // Getters
           WebviewMessage::Url(tx) => {
-            tx.send(webview.url().parse().unwrap()).unwrap();
+            tx.send(webview.url().unwrap().parse().unwrap()).unwrap();
           }
           WebviewMessage::Position(tx) => {
-            let bounds = webview.bounds();
+            let bounds = webview.bounds().unwrap();
             let position =
               LogicalPosition::new(bounds.x, bounds.y).to_physical(window.scale_factor());
             tx.send(position).unwrap();
           }
           WebviewMessage::Size(tx) => {
-            let bounds = webview.bounds();
+            let bounds = webview.bounds().unwrap();
             let size =
               LogicalSize::new(bounds.width, bounds.height).to_physical(window.scale_factor());
             tx.send(size).unwrap();
@@ -2878,7 +2879,7 @@ fn handle_user_message<T: UserEvent>(
             webview.focus();
           }
           WebviewMessage::SetAutoResize(auto_resize) => {
-            let bounds = webview.bounds();
+            let bounds = webview.bounds().unwrap();
             let window_size = window.inner_size().to_logical::<f32>(window.scale_factor());
             *webview.bounds.lock().unwrap() = if auto_resize {
               Some(WebviewBounds {
