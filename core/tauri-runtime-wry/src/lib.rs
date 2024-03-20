@@ -63,7 +63,7 @@ use tauri_utils::TitleBarStyle;
 use tauri_utils::{config::WindowConfig, Theme};
 use url::Url;
 use wry::{
-  FileDropEvent as WryFileDropEvent, ProxyConfig, ProxyEndpoint, WebContext, WebView,
+  DragDropEvent as WryDragDropEvent, ProxyConfig, ProxyEndpoint, WebContext, WebView,
   WebViewBuilder,
 };
 
@@ -3585,23 +3585,23 @@ fn create_webview<T: UserEvent>(
   if webview_attributes.file_drop_handler_enabled {
     let proxy = context.proxy.clone();
     let window_id_ = window_id.clone();
-    webview_builder = webview_builder.with_file_drop_handler(move |event| {
+    webview_builder = webview_builder.with_drag_drop_handler(move |event| {
       let event = match event {
-        WryFileDropEvent::Hovered {
+        WryDragDropEvent::Enter {
           paths,
           position: (x, y),
         } => FileDropEvent::Hovered {
           paths,
           position: PhysicalPosition::new(x as _, y as _),
         },
-        WryFileDropEvent::Dropped {
+        WryDragDropEvent::Drop {
           paths,
           position: (x, y),
         } => FileDropEvent::Dropped {
           paths,
           position: PhysicalPosition::new(x as _, y as _),
         },
-        WryFileDropEvent::Cancelled => FileDropEvent::Cancelled,
+        WryDragDropEvent::Leave => FileDropEvent::Cancelled,
         _ => unimplemented!(),
       };
 

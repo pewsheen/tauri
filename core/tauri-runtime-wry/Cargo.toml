@@ -13,8 +13,8 @@ edition = { workspace = true }
 rust-version = { workspace = true }
 
 [dependencies]
-wry = { git = "https://github.com/tauri-apps/wry.git", branch = "fix/duplicate-media-permission-prompt", default-features = false, features = [
-  "file-drop",
+wry = { git = "https://github.com/tauri-apps/wry.git", branch = "fix/media-perm-request-14-0", default-features = false, features = [
+  "drag-drop",
   "protocol",
   "os-webview",
 ] }
