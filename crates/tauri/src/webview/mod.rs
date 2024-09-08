@@ -54,6 +54,12 @@ pub(crate) type OnPageLoad<R> = dyn Fn(Webview<R>, PageLoadPayload<'_>) + Send +
 
 pub(crate) type DownloadHandler<R> = dyn Fn(Webview<R>, DownloadEvent<'_>) -> bool + Send + Sync;
 
+use objc2::rc::Retained;
+#[cfg(target_os = "macos")]
+use objc2_app_kit::NSWindow;
+use objc2_web_kit::WKUserContentController;
+use tauri_runtime_wry::wry::WryWebView;
+
 #[derive(Clone, Serialize)]
 pub(crate) struct CreatedEvent {
   pub(crate) label: String,
@@ -179,8 +185,8 @@ impl PlatformWebview {
   /// [WKWebView]: https://developer.apple.com/documentation/webkit/wkwebview
   #[cfg(any(target_os = "macos", target_os = "ios"))]
   #[cfg_attr(docsrs, doc(cfg(any(target_os = "macos", target_os = "ios"))))]
-  pub fn inner(&self) -> cocoa::base::id {
-    self.0.webview
+  pub fn inner(&self) -> Retained<WryWebView> {
+    self.0.webview.clone()
   }
 
   /// Returns WKWebView [controller] handle.
@@ -188,8 +194,8 @@ impl PlatformWebview {
   /// [controller]: https://developer.apple.com/documentation/webkit/wkusercontentcontroller
   #[cfg(any(target_os = "macos", target_os = "ios"))]
   #[cfg_attr(docsrs, doc(cfg(any(target_os = "macos", target_os = "ios"))))]
-  pub fn controller(&self) -> cocoa::base::id {
-    self.0.manager
+  pub fn controller(&self) -> Retained<WKUserContentController> {
+    self.0.manager.clone()
   }
 
   /// Returns [NSWindow] associated with the WKWebView webview.
@@ -197,8 +203,8 @@ impl PlatformWebview {
   /// [NSWindow]: https://developer.apple.com/documentation/appkit/nswindow
   #[cfg(target_os = "macos")]
   #[cfg_attr(docsrs, doc(cfg(target_os = "macos")))]
-  pub fn ns_window(&self) -> cocoa::base::id {
-    self.0.ns_window
+  pub fn ns_window(&self) -> Retained<NSWindow> {
+    self.0.ns_window.clone()
   }
 
   /// Returns [UIViewController] used by the WKWebView webview NSWindow.

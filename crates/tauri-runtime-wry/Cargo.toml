@@ -17,7 +17,13 @@ rustc-args = ["--cfg", "docsrs"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-wry = { version = "0.43.1", default-features = false, features = [
+# wry = { version = "0.43.1", default-features = false, features = [
+#   "drag-drop",
+#   "protocol",
+#   "os-webview",
+#   "linux-body",
+# ] }
+wry = { path = "../../../wry", default-features = false, features = [
   "drag-drop",
   "protocol",
   "os-webview",
@@ -47,6 +53,44 @@ percent-encoding = "2.1"
 
 [target."cfg(any(target_os = \"ios\", target_os = \"macos\"))".dependencies]
 cocoa = "0.26"
+objc2 = "0.5"
+objc2-web-kit = { version = "0.2.0", features = [
+  "WKWebView",
+  "WKWebViewConfiguration",
+  "WKWebsiteDataStore",
+  "WKDownload",
+  "WKDownloadDelegate",
+  "WKNavigation",
+  "WKNavigationDelegate",
+  "WKUserContentController",
+  "WKURLSchemeHandler",
+  "WKPreferences",
+  "WKURLSchemeTask",
+  "WKScriptMessageHandler",
+  "WKUIDelegate",
+  "WKOpenPanelParameters",
+  "WKFrameInfo",
+  "WKSecurityOrigin",
+  "WKScriptMessage",
+  "WKNavigationAction",
+  "WKWebpagePreferences",
+  "WKNavigationResponse",
+  "WKUserScript",
+] }
+
+[target."cfg(target_os = \"macos\")".dependencies]
+objc2-app-kit = { version = "0.2.0", features = [
+  "NSApplication",
+  "NSEvent",
+  "NSWindow",
+  "NSView",
+  "NSPasteboard",
+  "NSPanel",
+  "NSResponder",
+  "NSOpenPanel",
+  "NSSavePanel",
+  "NSMenu",
+] }
 
 [target."cfg(target_os = \"android\")".dependencies]
 jni = "0.21"

@@ -604,7 +604,12 @@ impl<R: Runtime> WebviewManager<R> {
     {
       webview
         .with_webview(|w| {
-          unsafe { crate::ios::on_webview_created(w.inner() as _, w.view_controller() as _) };
+          unsafe {
+            crate::ios::on_webview_created(
+              objc2::rc::Retained::into_raw(w.inner()) as _,
+              w.view_controller() as _,
+            )
+          };
         })
         .expect("failed to run on_webview_created hook");
     }

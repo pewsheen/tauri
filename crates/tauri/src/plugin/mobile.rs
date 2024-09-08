@@ -168,7 +168,7 @@ impl<R: Runtime, C: DeserializeOwned> PluginApi<R, C> {
               &name.into(),
               init_fn(),
               &serde_json::to_string(&config).unwrap().as_str().into(),
-              w.inner() as _,
+              objc2::rc::Retained::into_raw(w.inner()) as _,
             )
           };
           tx.send(()).unwrap();

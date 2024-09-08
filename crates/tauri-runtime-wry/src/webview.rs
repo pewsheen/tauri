@@ -15,22 +15,28 @@ mod imp {
 
 #[cfg(target_os = "macos")]
 mod imp {
-  use cocoa::base::id;
+  use objc2::rc::Retained;
+  use objc2_app_kit::NSWindow;
+  use objc2_web_kit::WKUserContentController;
+  use wry::WryWebView;
 
   pub struct Webview {
-    pub webview: id,
-    pub manager: id,
-    pub ns_window: id,
+    pub webview: Retained<WryWebView>,
+    pub manager: Retained<WKUserContentController>,
+    pub ns_window: Retained<NSWindow>,
   }
 }
 
 #[cfg(target_os = "ios")]
 mod imp {
   use cocoa::base::id;
+  use objc2::rc::Retained;
+  use objc2_web_kit::WKUserContentController;
+  use wry::WryWebView;
 
   pub struct Webview {
-    pub webview: id,
-    pub manager: id,
+    pub webview: Retained<WryWebView>,
+    pub manager: Retained<WKUserContentController>,
     pub view_controller: id,
   }
 }

@@ -106,6 +106,18 @@ embed_plist = "1.2"
 cocoa = "0.26"
 objc = "0.2"
 window-vibrancy = "0.5"
+objc2-app-kit = { version = "0.2.0", features = [
+  "NSApplication",
+  "NSEvent",
+  "NSWindow",
+  "NSView",
+  "NSPasteboard",
+  "NSPanel",
+  "NSResponder",
+  "NSOpenPanel",
+  "NSSavePanel",
+  "NSMenu",
+] }
 
 [target."cfg(windows)".dependencies]
 webview2-com = "0.33"
@@ -123,6 +135,33 @@ libc = "0.2"
 objc = "0.2"
 cocoa = "0.26"
 swift-rs = "1.0.7"
+
+[target."cfg(any(target_os = \"ios\", target_os = \"macos\"))".dependencies]
+cocoa = "0.26"
+objc2 = "0.5"
+objc2-web-kit = { version = "0.2.0", features = [
+  "WKWebView",
+  "WKWebViewConfiguration",
+  "WKWebsiteDataStore",
+  "WKDownload",
+  "WKDownloadDelegate",
+  "WKNavigation",
+  "WKNavigationDelegate",
+  "WKUserContentController",
+  "WKURLSchemeHandler",
+  "WKPreferences",
+  "WKURLSchemeTask",
+  "WKScriptMessageHandler",
+  "WKUIDelegate",
+  "WKOpenPanelParameters",
+  "WKFrameInfo",
+  "WKSecurityOrigin",
+  "WKScriptMessage",
+  "WKNavigationAction",
+  "WKWebpagePreferences",
+  "WKNavigationResponse",
+  "WKUserScript",
+] }
 
 [build-dependencies]
 heck = "0.5"
